@@ -1,0 +1,27 @@
+my_url = "https://quotes.toscrape.com/";
+max_size = 12; # comentandoo!!
+urls = [my_url];
+crawl urls to data where {
+	pattern: "key(w+)";
+	selector: "//div/text()";
+}
+while {
+	data $ 0 == "cutme";
+} do {
+	cut data from 0 to 1; # borrar primer elemento
+}
+drop word in data when {
+	or {
+		length word < (12 * max_size);
+		word contains "dropme";
+	}
+}
+save word in data when {
+	and {
+		not {
+			word == "saveme";
+		}
+		word $ 0 != "x";
+	}
+}
+store *{ comment! in the middle! }* data as "my_data.txt";

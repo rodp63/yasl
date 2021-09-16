@@ -1,0 +1,11 @@
+build
+dist
+env
+*.egg-info
+*.pyc
+.eggs/
+.tox
+/.coverage
+.idea/
+.env
+.DS_Store
