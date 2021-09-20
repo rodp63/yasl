@@ -2,18 +2,22 @@ my_url = "https://quotes.toscrape.com/";
 max_size = 12; # comentandoo!!
 urls = [my_url];
 crawl urls to data where {
-	pattern: "key(w+)";
-	selector: "//div/text()";
+	regex: "key(w+)";
+	xpath_selector: "//div/text()";
 }
 while {
-	data $ 0 == "cutme";
+	data $ 0 == "\"cutme\"";
 } do {
 	cut data from 0 to 1; # borrar primer elemento
+	*{
+	multiline
+	comment 
+	}*
 }
 drop word in data when {
 	or {
 		length word < (12 * max_size);
-		word contains "dropme";
+		word contains "drop\\me";
 	}
 }
 save word in data when {

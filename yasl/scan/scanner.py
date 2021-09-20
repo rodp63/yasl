@@ -1,58 +1,58 @@
-from yasl.scan.tokens import Token, Number, Tag
+from yasl.scan.tokens import Reserved, Tag, Token, Number
 
 
 class Scanner:
     def __init__(self):
-        self.reserved_words = {}
+        self.line = 1
+        self.previous_line = ""
+        self.current_line = ""
+        self.hash_table = {}
         self.compound_tokens = {}
 
-        self.reserved_words["="] = Tag.ASSIGN
-        self.reserved_words[":"] = Tag.RSV_ASSIGN
-        self.reserved_words["+"] = Tag.SUM
-        self.reserved_words["-"] = Tag.DIFF
-        self.reserved_words["*"] = Tag.MULT
-        self.reserved_words["/"] = Tag.DIV
-        self.reserved_words["%"] = Tag.MOD
-        self.reserved_words["^"] = Tag.EXP
-        self.reserved_words[">"] = Tag.GT
-        self.reserved_words[">="] = Tag.GE
-        self.reserved_words["<"] = Tag.LT
-        self.reserved_words["<="] = Tag.LE
-        self.reserved_words["=="] = Tag.EQ
-        self.reserved_words["!="] = Tag.NE
-        self.reserved_words["$"] = Tag.POS
-        self.reserved_words["{"] = Tag.OPEN_BRACE
-        self.reserved_words["}"] = Tag.CLOSE_BRACE
-        self.reserved_words["["] = Tag.OPEN_BRACKET
-        self.reserved_words["]"] = Tag.CLOSE_BRACKET
-        self.reserved_words["("] = Tag.OPEN_PAREN
-        self.reserved_words[")"] = Tag.CLOSE_PAREN
-        self.reserved_words[","] = Tag.COMMA
-        self.reserved_words[";"] = Tag.SEMICOLON
-        self.reserved_words["\""] = Tag.QUOTE
-        self.reserved_words["crawl"] = Tag.CRAWL
-        self.reserved_words["length"] = Tag.LENGTH
-        self.reserved_words["contains"] = Tag.CONTAINS
-        self.reserved_words["in"] = Tag.IN
-        self.reserved_words["store"] = Tag.STORE
-        self.reserved_words["load"] = Tag.LOAD
-        self.reserved_words["cut"] = Tag.CUT
-        self.reserved_words["and"] = Tag.AND
-        self.reserved_words["or"] = Tag.OR
-        self.reserved_words["not"] = Tag.NOT
-        self.reserved_words["drop"] = Tag.DROP
-        self.reserved_words["save"] = Tag.SAVE
-        self.reserved_words["from"] = Tag.FROM
-        self.reserved_words["to"] = Tag.TO
-        self.reserved_words["pattern"] = Tag.PATTERN
-        self.reserved_words["selector"] = Tag.SELECTOR
-        self.reserved_words["as"] = Tag.AS
-        self.reserved_words["where"] = Tag.WHERE
-        self.reserved_words["while"] = Tag.WHILE
-        self.reserved_words["when"] = Tag.WHEN
-        self.reserved_words["#"] = Tag.EOL_COMMENT
-        self.reserved_words["*{"] = Tag.OPEN_COMMENT
-        self.reserved_words["}*"] = Tag.CLOSE_COMMENT
+        self.hash_table[Reserved.ASSIGN] = Tag.ASSIGN
+        self.hash_table[Reserved.RSV_ASSIGN] = Tag.RSV_ASSIGN
+        self.hash_table[Reserved.SUM] = Tag.SUM
+        self.hash_table[Reserved.DIFF] = Tag.DIFF
+        self.hash_table[Reserved.MULT] = Tag.MULT
+        self.hash_table[Reserved.DIV] = Tag.DIV
+        self.hash_table[Reserved.MOD] = Tag.MOD
+        self.hash_table[Reserved.EXP] = Tag.EXP
+        self.hash_table[Reserved.GT] = Tag.GT
+        self.hash_table[Reserved.GE] = Tag.GE
+        self.hash_table[Reserved.LT] = Tag.LT
+        self.hash_table[Reserved.LE] = Tag.LE
+        self.hash_table[Reserved.EQ] = Tag.EQ
+        self.hash_table[Reserved.NE] = Tag.NE
+        self.hash_table[Reserved.POS] = Tag.POS
+        self.hash_table[Reserved.OPEN_BRACE] = Tag.OPEN_BRACE
+        self.hash_table[Reserved.CLOSE_BRACE] = Tag.CLOSE_BRACE
+        self.hash_table[Reserved.OPEN_BRACKET] = Tag.OPEN_BRACKET
+        self.hash_table[Reserved.CLOSE_BRACKET] = Tag.CLOSE_BRACKET
+        self.hash_table[Reserved.OPEN_PAREN] = Tag.OPEN_PAREN
+        self.hash_table[Reserved.CLOSE_PAREN] = Tag.CLOSE_PAREN
+        self.hash_table[Reserved.COMMA] = Tag.COMMA
+        self.hash_table[Reserved.SEMICOLON] = Tag.SEMICOLON
+        self.hash_table[Reserved.CRAWL] = Tag.CRAWL
+        self.hash_table[Reserved.LENGTH] = Tag.LENGTH
+        self.hash_table[Reserved.CONTAINS] = Tag.CONTAINS
+        self.hash_table[Reserved.IN] = Tag.IN
+        self.hash_table[Reserved.STORE] = Tag.STORE
+        self.hash_table[Reserved.LOAD] = Tag.LOAD
+        self.hash_table[Reserved.CUT] = Tag.CUT
+        self.hash_table[Reserved.AND] = Tag.AND
+        self.hash_table[Reserved.OR] = Tag.OR
+        self.hash_table[Reserved.NOT] = Tag.NOT
+        self.hash_table[Reserved.DROP] = Tag.DROP
+        self.hash_table[Reserved.SAVE] = Tag.SAVE
+        self.hash_table[Reserved.FROM] = Tag.FROM
+        self.hash_table[Reserved.TO] = Tag.TO
+        self.hash_table[Reserved.REGEX] = Tag.REGEX
+        self.hash_table[Reserved.CSS_SELECTOR] = Tag.CSS_SELECTOR
+        self.hash_table[Reserved.XPATH_SELECTOR] = Tag.XPATH_SELECTOR
+        self.hash_table[Reserved.AS] = Tag.AS
+        self.hash_table[Reserved.WHERE] = Tag.WHERE
+        self.hash_table[Reserved.WHILE] = Tag.WHILE
+        self.hash_table[Reserved.WHEN] = Tag.WHEN
 
         self.compound_tokens["<"] = "="
         self.compound_tokens[">"] = "="
@@ -60,12 +60,13 @@ class Scanner:
         self.compound_tokens["!"] = "="
         self.compound_tokens["*"] = "{"
         self.compound_tokens["}"] = "*"
-    
+
     def open_file(self, filename):
         self.body = open(filename, "r")
 
     def get_char(self):
         self.current = self.body.read(1)
+        self.current_line += self.current
         return self.current
 
     def peek_char(self):
@@ -77,36 +78,68 @@ class Scanner:
 
     def get_str(self):
         lexeme = ""
-        while self.current and self.current != "\"":
-            if self.current == "\\":
-                if self.peek_char() == "\"" or self.peek_char() == "\\":
+        while self.current and self.current != Reserved.QUOTE:
+            if self.current == Reserved.ESCAPE:
+                if (
+                    self.peek_char() == Reserved.QUOTE
+                    or self.peek_char() == Reserved.ESCAPE
+                ):
                     self.get_char()
                 else:
-                    raise Exception
+                    raise SyntaxError("Invalid use of the escape character.")
+
+            if self.current == "\n":
+                raise SyntaxError("EOL while scanning string literal.")
+
             lexeme += self.current
             self.get_char()
 
+        if not self.current:
+            raise SyntaxError("EOF while scanning string literal.")
+
         return Token(Tag.STR, lexeme)
 
+    def reset_line(self):
+        self.line += 1
+        self.previous_line = self.current_line
+
+        if self.current_line[-1] == "\n":
+            self.previous_line = self.previous_line[:-1]
+
+        self.current_line = ""
+
+    def go_to_next_line(self):
+        while self.current and self.current != "\n":
+            self.get_char()
+
+        self.reset_line()
+
     def skip_whitespaces(self):
-        while(self.current.isspace()):
+        while self.current.isspace():
+            if self.current == "\n":
+                self.reset_line()
+
             self.get_char()
 
     def skip_comment(self):
-        while(True):
+        while True:
             self.get_char()
-            if self.current and self.current == "}" and self.peek_char() == "*":
+            if not self.current:
+                raise SyntaxError(
+                    "Unterminated {} comment.".format(Reserved.OPEN_COMMENT)
+                )
+            if (
+                self.current == Reserved.CLOSE_COMMENT[0]
+                and self.peek_char() == Reserved.CLOSE_COMMENT[1]
+            ):
                 self.get_char()
                 return
-
-    def skip_eol_comment(self):
-        while(self.current != "\n"):
-            self.get_char()
 
     def get_token(self):
         self.skip_whitespaces()
 
-        if not self.current: return
+        if not self.current:
+            return
 
         lexeme = self.current
 
@@ -115,25 +148,32 @@ class Scanner:
                 self.get_char()
                 lexeme += self.current
 
-                if lexeme == "*{":
+                if lexeme == Reserved.OPEN_COMMENT:
                     self.skip_comment()
                     return
 
-                return Token(self.reserved_words[lexeme], lexeme)
+                return Token(self.hash_table[lexeme], lexeme)
 
-        if lexeme in self.reserved_words:
-            if lexeme == "\"":
-                self.get_char()
-                return self.get_str()
+        if lexeme == Reserved.QUOTE:
+            self.get_char()
+            return self.get_str()
 
-            if lexeme == "#":
-                self.skip_eol_comment()
-                return
+        if lexeme == Reserved.EOL_COMMENT:
+            self.go_to_next_line()
+            return
 
-            return Token(self.reserved_words[lexeme], lexeme)
-        
+        if lexeme in self.hash_table:
+            return Token(self.hash_table[lexeme], lexeme)
+
         if lexeme.isnumeric():
+            flag = lexeme == "0"
+
             while self.peek_char().isnumeric():
+                if flag and self.current != "0":
+                    raise SyntaxError(
+                        "Leading zeros in integer literals are not permitted."
+                    )
+
                 self.get_char()
                 lexeme += self.current
 
@@ -144,17 +184,32 @@ class Scanner:
                 self.get_char()
                 lexeme += self.current
 
-            if lexeme in self.reserved_words:
-                return Token(self.reserved_words[lexeme], lexeme)
+            if lexeme in self.hash_table:
+                return Token(self.hash_table[lexeme], lexeme)
 
             return Token(Tag.ID, lexeme)
-    
+
+        raise SyntaxError("Unkown character.")
+
     def get_tokens(self):
         tokens = []
+        errors = []
 
         while self.get_char():
-            token = self.get_token()
-            if token:
-                tokens.append(token)
-        
-        return tokens
+            try:
+                token = self.get_token()
+                if token:
+                    tokens.append(token)
+            except Exception as ex:
+                character = len(self.current_line)
+                self.go_to_next_line()
+                errors.append(
+                    {
+                        "message": str(ex),
+                        "line_number": self.line - 1,
+                        "line": self.previous_line,
+                        "pointer": character,
+                    }
+                )
+
+        return tokens, errors

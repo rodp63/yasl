@@ -1,0 +1,23 @@
+my_url = "https://quotes.toscrape.com/;
+max_size = 012; # this is an error
+urls = [my_url];
+crawl urls to data where {
+	regex: "key(w+)";
+	xpath_selector: "//div/text()";
+	error@symbol: "error_for_sure";
+}
+drop word in data when {
+	or {
+		length word < (12 ~ max_size);
+		word contains "drop\\me";
+	}
+}
+save word in data when {
+	and {
+		not {
+			word == "\e\r\r\o\r";
+		}
+		word $ 0 != "yi";
+	}
+}
+store *{ comment! with no ending :(; 
