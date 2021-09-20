@@ -46,13 +46,14 @@ class Scanner:
         self.hash_table[Reserved.SAVE] = Tag.SAVE
         self.hash_table[Reserved.FROM] = Tag.FROM
         self.hash_table[Reserved.TO] = Tag.TO
+        self.hash_table[Reserved.AS] = Tag.AS
         self.hash_table[Reserved.REGEX] = Tag.REGEX
         self.hash_table[Reserved.CSS_SELECTOR] = Tag.CSS_SELECTOR
         self.hash_table[Reserved.XPATH_SELECTOR] = Tag.XPATH_SELECTOR
-        self.hash_table[Reserved.AS] = Tag.AS
         self.hash_table[Reserved.WHERE] = Tag.WHERE
         self.hash_table[Reserved.WHILE] = Tag.WHILE
         self.hash_table[Reserved.WHEN] = Tag.WHEN
+        self.hash_table[Reserved.DO] = Tag.DO
 
         self.compound_tokens["<"] = "="
         self.compound_tokens[">"] = "="
