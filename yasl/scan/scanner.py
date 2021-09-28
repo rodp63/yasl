@@ -79,20 +79,27 @@ class Scanner:
 
     def get_str(self):
         lexeme = ""
+        special_escaped = {"n": "\n", "t": "\t"}
         while self.current and self.current != Reserved.QUOTE:
+            take = True
             if self.current == Reserved.ESCAPE:
                 if (
                     self.peek_char() == Reserved.QUOTE
                     or self.peek_char() == Reserved.ESCAPE
                 ):
                     self.get_char()
+                elif self.peek_char() in special_escaped:
+                    self.get_char()
+                    lexeme += special_escaped[self.current]
+                    take = False
                 else:
                     raise SyntaxError("Invalid use of the escape character.")
 
             if self.current == "\n":
                 raise SyntaxError("EOL while scanning string literal.")
 
-            lexeme += self.current
+            if take:
+                lexeme += self.current
             self.get_char()
 
         if not self.current:

@@ -13,6 +13,7 @@ def cli():
 
 commands = [
     "scan",
+    "parse",
 ]
 
 for command in commands:

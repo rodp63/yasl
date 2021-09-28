@@ -16,6 +16,21 @@ Then, install the YASL command line interface.
 $ python setup.py install
 ```
 
+Verify that _yasl_ was installed successfully.
+
+```bash
+$ yasl
+Usage: yasl [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --version   Show the version and exit.
+  -h, --help  Show this message and exit.
+
+Commands:
+  parse  Parse a YASL file
+  scan   Scan a YASL file
+```
+
 ## Usage
 
 - Scan a `.yasl` file:
@@ -27,7 +42,7 @@ $ python setup.py install
 ## Examples
 
 ``` bash
-$ yasl scan samples/ok.yasl
+$ yasl scan samples/ok.yasl -o
 ...
 <Tag.STORE,store>
 <Tag.ID,data>

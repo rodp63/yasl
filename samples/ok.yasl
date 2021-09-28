@@ -23,7 +23,7 @@ drop word in data when {
 save word in data when {
 	and {
 		not {
-			word == "saveme";
+			word == "save\tme";
 		}
 		word $ 0 != "x";
 	}

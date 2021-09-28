@@ -15,23 +15,18 @@ def strip_code(code):
 
 
 def echo_error(error, filename, ending="\n"):
-    line = "File {}, line {}, ".format(filename, error["line_number"])
+    line = "File {}, line {}, ".format(
+        click.format_filename(filename), error["line_number"]
+    )
     code, count = strip_code(error["line"])
     pointer = " " * (error["pointer"] - count) + "^"
-    click.secho(line, bold=True, nl=False)
-    click.secho("SyntaxError: ", nl=False, fg="red", bold=True)
-    click.secho(error["message"], bold=True)
-    click.echo("{}\n{}{}".format(code, pointer, ending))
+    click.secho(line, bold=True, nl=False, err=True)
+    click.secho("SyntaxError: ", nl=False, fg="red", bold=True, err=True)
+    click.secho(error["message"], bold=True, err=True)
+    click.echo("{}\n{}{}".format(code, pointer, ending), err=True)
 
 
-@click.command(short_help="Scan a YASL file")
-@click.argument("filename", type=click.Path(exists=True))
-def yasl_command(filename):
-    """Get the file tokens
-
-    FILENAME is the file to scan.
-    """
-
+def scan_file(filename, output):
     scanner = Scanner()
     scanner.open_file(filename)
 
@@ -40,7 +35,22 @@ def yasl_command(filename):
         for error in errors[:-1]:
             echo_error(error, filename)
         echo_error(errors[-1], filename, "")
+        return None
     else:
-        for token in tokens:
-            click.echo(token)
-        click.secho("Ok! Scan completed", bold=True, fg="green")
+        if output:
+            for token in tokens:
+                click.echo(token)
+            click.secho("Ok! Scan completed", bold=True, fg="green")
+        return tokens
+
+
+@click.command(short_help="Scan a YASL file")
+@click.argument("filename", type=click.Path(exists=True))
+@click.option("-o", "--output", is_flag=True, help="Print the output of the scanner")
+def yasl_command(filename, output):
+    """Get the file tokens
+
+    FILENAME is the file to scan.
+    """
+
+    return scan_file(filename, output)
