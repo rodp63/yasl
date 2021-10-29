@@ -107,10 +107,11 @@ class Tag(Enum):
     ID = auto()
     NUM = auto()
     STR = auto()
+    EOF = auto()
 
 
 class Token:
-    def __init__(self, tag: Tag, lexeme: str):
+    def __init__(self, tag, lexeme):
         self.tag = tag
         self.lexeme = lexeme
 

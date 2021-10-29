@@ -21,7 +21,7 @@ def echo_error(error, filename, ending="\n"):
     code, count = strip_code(error["line"])
     pointer = " " * (error["pointer"] - count) + "^"
     click.secho(line, bold=True, nl=False, err=True)
-    click.secho("SyntaxError: ", nl=False, fg="red", bold=True, err=True)
+    click.secho("LexicalError: ", nl=False, fg="red", bold=True, err=True)
     click.secho(error["message"], bold=True, err=True)
     click.echo("{}\n{}{}".format(code, pointer, ending), err=True)
 
