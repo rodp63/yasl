@@ -1,3 +1,7 @@
+epsilon = "epsilon"
+
+eof = "$"
+
 yasl_grammar = """
 S -> STMT_LIST
 STMT_LIST -> STMT semicolon STMT_LIST | epsilon

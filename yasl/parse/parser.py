@@ -2,8 +2,8 @@ from queue import LifoQueue
 from collections import OrderedDict
 from anytree import Node
 
-from yasl.parse.utils import epsilon, eof, Rule, tag_to_symbol
 from yasl.scan.tokens import Tag, Token
+from yasl.utils import tag_to_symbol, symbol_to_lexeme
 
 
 class Stack(LifoQueue):
@@ -13,8 +13,23 @@ class Stack(LifoQueue):
         return self.queue[len(self.queue) - 1]
 
 
+class Rule:
+    def __init__(self, head, body):
+        self.head = head
+        self.body = body
+
+    def is_left_recursive(self):
+        return self.body and self.head == self.body[0]
+
+    def __eq__(self, other):
+        return self.head == other.head and self.body == other.body
+
+    def __str__(self):
+        return "{} -> {}".format(self.head, " ".join(self.body))
+
+
 class Parser:
-    def __init__(self, grammar):
+    def __init__(self, grammar, epsilon, eof):
         try:
             self.productions = OrderedDict()
             self.epsilon = epsilon
@@ -127,6 +142,13 @@ class Parser:
                         table[(rule.head, t)] = rule
         return (table, ambigous)
 
+    def format_error(self, message, token):
+        return {
+            "message": message,
+            "line_number": token.line,
+            "pointer": token.column,
+        }
+
     def parse_tokens(self, tokens):
         table, ambigous = self.parsing_table()
         if ambigous:
@@ -134,53 +156,58 @@ class Parser:
 
         error_list = []
 
-        word = tag_to_symbol(tokens.pop(0).tag)
+        current_token = tokens.pop(0)
+        word = tag_to_symbol(current_token.tag)
         root = Node(self.start)
         stack = Stack()
         order = 1
 
-        tokens.append(Token(Tag.EOF, self.eof))
+        tokens.append(Token(Tag.EOF, self.eof, -1, -1))
         stack.put((self.eof, None))
         stack.put((self.start, root))
 
         top_stack = stack.peek()
         while top_stack:
             if top_stack[0] == self.eof and word == self.eof:
-                if not error_list:
-                    return (True, root, None)
-                else:
-                    return (False, root, error_list)
+                return root, error_list
 
             if self.is_terminal(top_stack[0]):
-                if top_stack[0] == word:
-                    stack.get()
-                    word = tag_to_symbol(tokens.pop(0).tag)
-                else:
-                    error_list.append("Expected {}".format(top_stack[0]))
-                    while word != top_stack[0]:
-                        if word == self.eof:
-                            return False, root, error_list
-                        word = tag_to_symbol(tokens.pop(0).tag)
-            else:
-                rule = table.get((top_stack[0], word))
                 stack.get()
-                if rule:
-                    symbols = rule.body[::-1]
-                    current = len(symbols) + order
-                    for symbol in symbols:
-                        node = Node("{}[{}]".format(symbol, str(current)), parent=top_stack[1])
-                        current -= 1
-                        if symbol != self.epsilon:
-                            stack.put((symbol, node))
-                    order += len(symbols)
+                if top_stack[0] == word:
+                    current_token = tokens.pop(0)
+                    word = tag_to_symbol(current_token.tag)
                 else:
                     error_list.append(
-                        "Unexpected character:{}. Expected: {}".format(
-                            word, self.first(top_stack[0])
+                        self.format_error(
+                            "Expected character: '{}'".format(
+                                symbol_to_lexeme(top_stack[0])
+                            ),
+                            current_token,
                         )
                     )
-                    follow = self.follow(top_stack[0]) + [self.eof]
-                    while word not in follow:
-                        word = tag_to_symbol(tokens.pop(0).tag)
+            else:
+                rule = table.get((top_stack[0], word))
+                if rule:
+                    stack.get()
+                    symbols = rule.body[::-1]
+                    for symbol in symbols:
+                        node = Node("{}[{}]".format(symbol, order), parent=top_stack[1])
+                        order += 1
+                        if symbol != self.epsilon:
+                            stack.put((symbol, node))
+                else:
+                    terminals = self.first(top_stack[0])
+                    error_list.append(
+                        self.format_error(
+                            "Unexpected character: '{}'".format(current_token.lexeme),
+                            current_token,
+                        )
+                    )
+
+                    while word not in terminals:
+                        if word == self.eof:
+                            return root, error_list
+                        current_token = tokens.pop(0)
+                        word = tag_to_symbol(current_token.tag)
 
             top_stack = stack.peek()

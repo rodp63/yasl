@@ -1,25 +1,29 @@
 my_url = "https://quotes.toscrape.com/";
-max_size = 12; # comentandoo!!
+max_size = 12; # this is a EOL comment
 urls = [my_url,];
+
 crawl urls to data where {
 	regex: "key(w+)";
 	xpath_selector: "//div/text()";
 };
+
 while {
 	data $ 0 == "\"cutme\"";
 } do {
-	cut data from 0 to 1; # borrar primer elemento
+	cut data from 0 to 1; # erase first element
 	*{
 	multiline
 	comment 
 	}*
 };
+
 drop word in data when {
 	or {
 		length word < (12 * max_size);
 		word contains "drop\\me";
 	};
 };
+
 save word in data when {
 	and {
 		not {
@@ -28,5 +32,12 @@ save word in data when {
 		word $ 0 != "x";
 	};
 };
+
+when {
+	length data > 10;
+} do {
+	cut data from 0 to 5;
+};
+
 load "links.txt" as links;
 store *{ comment! in the middle! }* data as "my_data.txt";

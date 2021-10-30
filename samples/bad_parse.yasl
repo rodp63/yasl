@@ -1,21 +1,25 @@
 my_url = "https://quotes.toscrape.com/";
 max_size = 12;
-urls = [my_url,];
+urls = [my_url];
+
 crawl urls to data where {
 	regex: "key(w+)";
 	xpath_selector: "//div/text()";
 };
+
 while {
 	data $ 0 == "\"cutme\"";
 } do {
 	cut data from 0 to 1;
 };
-drop word in data when {
+
+(drop word in data when {
 	or {
 		length word < (12 * max_size;
 		word contains "drop\\me";
 	};
 };
+
 save word in data when {
 	and {
 		not {
@@ -24,5 +28,6 @@ save word in data when {
 		word $ 0 != "x";
 	};
 };
+
 load "links.txt" links; # missing as after str
 store *{ comment! in the middle! }* data as "my_data.txt";

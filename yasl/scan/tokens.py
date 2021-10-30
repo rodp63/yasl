@@ -108,18 +108,21 @@ class Tag(Enum):
     NUM = auto()
     STR = auto()
     EOF = auto()
+    WILDCARD = auto()
 
 
 class Token:
-    def __init__(self, tag, lexeme):
+    def __init__(self, tag, lexeme, line, rigth_wall):
         self.tag = tag
         self.lexeme = lexeme
+        self.line = line
+        self.column = rigth_wall - len(lexeme) + 1
 
     def __str__(self):
         return "<{},{}>".format(self.tag, self.lexeme)
 
 
 class Number(Token):
-    def __init__(self, lexeme):
-        super().__init__(Tag.NUM, lexeme)
+    def __init__(self, lexeme, line, rigth_wall):
+        super().__init__(Tag.NUM, lexeme, line, rigth_wall)
         self.value = int(lexeme)
