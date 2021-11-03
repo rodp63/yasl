@@ -9,3 +9,4 @@ env
 .idea/
 .env
 .DS_Store
+*.png
