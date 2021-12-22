@@ -166,6 +166,11 @@ def lexeme_to_tag(lexeme):
     return lexeme_to_tag_dict.get(lexeme, None)
 
 
+def symbol_to_tag(symbol):
+    inv_dict = {v: k for k, v in tag_to_symbol_dict.items()}
+    return inv_dict.get(symbol, None)
+
+
 def path_of_tree_file(filename):
     filename = os.path.basename(filename).split(".")[0]
     filename = filename + "_parse_tree.png"

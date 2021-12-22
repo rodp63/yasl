@@ -1,6 +1,7 @@
 my_url = "https://quotes.toscrape.com/";
 max_size = 12; # this is a EOL comment
 urls = [my_url,];
+var = urls contains my_url;
 
 crawl urls to data where {
 	regex: "key(w+)";

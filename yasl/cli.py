@@ -14,6 +14,7 @@ def cli():
 commands = [
     "scan",
     "parse",
+    "run",
 ]
 
 for command in commands:

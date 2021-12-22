@@ -1,5 +1,6 @@
 import click
 
+from copy import deepcopy
 from anytree import RenderTree
 from anytree.exporter import DotExporter
 from yasl.parse.parser import Parser
@@ -22,6 +23,7 @@ def parse_file(filename, output, image):
         return
     try:
         parser = Parser(yasl_grammar, epsilon, eof)
+        tokens_copy = deepcopy(tokens)
         tree, errors = parser.parse_tokens(tokens)
         if errors:
             with open(filename, "r") as code:
@@ -40,7 +42,7 @@ def parse_file(filename, output, image):
                 click.secho("Ok! Parsing completed", bold=True, fg="green")
             if image:
                 DotExporter(tree).to_picture(path_of_tree_file(filename))
-            return tree
+            return tree, tokens_copy
     except Exception as ex:
         _echo_error(str(ex), filename)
         return None

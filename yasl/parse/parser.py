@@ -158,7 +158,7 @@ class Parser:
 
         current_token = tokens.pop(0)
         word = tag_to_symbol(current_token.tag)
-        root = Node(self.start)
+        root = Node("{}[0]".format(self.start))
         stack = Stack()
         order = 1
 
